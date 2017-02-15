@@ -12,7 +12,7 @@ The motor vehicle collision database includes the date and time, location (as bo
 ## Data Import 
 ```{r}
 # Setting Directory
-setwd("/home/milan/Documents/MachineLearning/R-workspace/Kaggle/NYC_Vehicle_collision/")
+# setwd("/home/milan/Documents/MachineLearning/R-workspace/Kaggle/NYC_Vehicle_collision/")
 
 # Library Import
 library(data.table)
@@ -21,7 +21,7 @@ library(ggplot2)
 library(ggthemes)
 
 # Data import and Processing
-collisionData <- read.csv("/home/milan/Documents/MachineLearning/R-workspace/Kaggle/NYC_Vehicle_collision/data/database.csv")
+collisionData <- read.csv("/home/user/Documents/R-workspace/machine-learning/NYC_Vehicle_Collision_Analysis/data/database.csv")
 collisionData <- data.table(collisionData)
 collisionData$DATE <- as.Date(collisionData$DATE,format = "%m/%d/%y")
 str(collisionData)
@@ -55,10 +55,6 @@ ggplotly(trendWithSummary)
 ```
 Green Line - Mean 
 Shaded Region - Inter Quantile Range
-
-
-
-
 
 ```{r}
 library(reshape2)
@@ -115,8 +111,6 @@ ggplotly()
 ```
 
 
-
-
 ```{r}
 ggplot(collisionData)+geom_line(aes(HourOfCollision,group=1),stat = "count",col="#FFFFFF")+theme(axis.text.x=element_text(angle = 90))+theme_solarized(light = FALSE) +
   scale_colour_solarized("red")+ggtitle("Trend Of Collision (Hour Based)")+ylab("No of collision")+xlab("Hour Of Collision")+
@@ -125,18 +119,47 @@ ggplot(collisionData)+geom_line(aes(HourOfCollision,group=1),stat = "count",col=
 
 
 ```{r}
+InvolvedPerson <- collisionData[,.(.N,sum(PERSONS.INJURED),sum(PERSONS.KILLED)),by=c("HourOfCollision","BOROUGH")]
+
+colnames(InvolvedPerson) <- c("Hour_Of_Collision","BOROUGH","Accident.Count","PERSONS.INJURED","PERSONS.KILLED")
+
+InvolvedPersonMelted <- melt(InvolvedPerson,id.vars = c("Hour_Of_Collision","BOROUGH"))
+
+ggplot(InvolvedPersonMelted)+geom_line(aes(Hour_Of_Collision,value,col= variable,group = variable))+
+  theme(axis.text.x=element_text(angle = 90))+theme_solarized(light = FALSE) +
+  scale_colour_solarized("red",guide = guide_legend(title = "Count Statistic"))+ggtitle("Trend Of Collision With Statisical Summary")+ylab("No of person killed | person injured | collision")+facet_wrap(~BOROUGH)+
+  theme(axis.title.x = element_text(colour = "white"),axis.title.y = element_text(colour = "white"),title = element_text(colour = "white"))
+
+```
+```{r}
+collisionData <- collisionData[,month := month(DATE),by=1:nrow(collisionData)]
+collisionData <- collisionData[,weekdays:= weekdays(DATE)]
+collisionData <- collisionData[,day:= format(DATE, "%d")]
+
+InvolvedPerson <- collisionData[,.(.N,sum(PERSONS.INJURED),sum(PERSONS.KILLED)),by=c("HourOfCollision","BOROUGH","month")]
+
+colnames(InvolvedPerson) <- c("Hour_Of_Collision","BOROUGH","month","Accident.Count","PERSONS.INJURED","PERSONS.KILLED")
+
+InvolvedPersonMelted <- melt(InvolvedPerson,id.vars = c("Hour_Of_Collision","BOROUGH","month"))
+
+ggplot(InvolvedPersonMelted)+geom_line(aes(Hour_Of_Collision,value,col= variable,group = variable))+
+  theme(axis.text.x=element_text(angle = 90))+theme_solarized(light = FALSE) +
+  scale_colour_solarized("red",guide = guide_legend(title = "Count Statistic"))+ggtitle("Trend Of Collision With Statisical Summary")+ylab("No of person killed | person injured | collision")+facet_wrap(~BOROUGH+month)+
+  theme(axis.title.x = element_text(colour = "white"),axis.title.y = element_text(colour = "white"),title = element_text(colour = "white"))
+
+ggplot(InvolvedPersonMelted)+geom_bar(aes(BOROUGH,value,fill=variable),stat = "identity",position="dodge")
 
 ```
 
+```{r}
+InvolvedPerson <- collisionData[,.(.N,sum(PERSONS.INJURED),sum(PERSONS.KILLED)),by=c("HourOfCollision","BOROUGH","month","day")]
 
+colnames(InvolvedPerson) <- c("Hour_Of_Collision","BOROUGH","month","day","Accident.Count","PERSONS.INJURED","PERSONS.KILLED")
 
+InvolvedPersonMelted <- melt(InvolvedPerson,id.vars = c("Hour_Of_Collision","BOROUGH","month"))
 
-
-
-
-
-
-
-
-
-
+ggplot(InvolvedPersonMelted)+geom_line(aes(Hour_Of_Collision,value,col= variable,group = variable))+
+  theme(axis.text.x=element_text(angle = 90))+theme_solarized(light = FALSE) +
+  scale_colour_solarized("red",guide = guide_legend(title = "Count Statistic"))+ggtitle("Trend Of Collision With Statisical Summary")+ylab("No of person killed | person injured | collision")+facet_wrap(~BOROUGH+month)+
+  theme(axis.title.x = element_text(colour = "white"),axis.title.y = element_text(colour = "white"),title = element_text(colour = "white"))
+```
